@@ -55,23 +55,24 @@ int main(void){
             //check if directory properly changed
             char* currentDir = getcwd(NULL, 0);
             printf("current directory: %s\n", currentDir);
-            //This means there's a 3rd command (this might be unecessary since skipping if & is present anyways)
-            if(token2[strlen(token2 - 1) == ' ']){
-                char* token3 = strtok(NULL, "\0");
-                //No 3rd command (looking for a &, but we don't need to do anything if present)
-                if(token3 == NULL){
-                    printf("No 3rd command\n");
-                }
-                else{
-                    printf("3rd command present\n");
-                    printf("Mod: %s", token3);
-                    printf("Token3 length: %d\n", strlen(token3));
-                }
-            }
+
+            // //This means there's a 3rd command (this might be unecessary since skipping if & is present anyways)
+            // if(token2[strlen(token2 - 1) == ' ']){
+            //     char* token3 = strtok(NULL, "\0");
+            //     //No 3rd command (looking for a &, but we don't need to do anything if present)
+            //     if(token3 == NULL){
+            //         printf("No 3rd command\n");
+            //     }
+            //     else{
+            //         printf("3rd command present\n");
+            //         printf("Mod: %s", token3);
+            //         printf("Token3 length: %d\n", strlen(token3));
+            //     }
+            // }
         }
     }
     
-
+    
 
     // //Commands made by me recognized from user input --> now do work with these
     // if(strcmp(buffer, "cd")==0){
