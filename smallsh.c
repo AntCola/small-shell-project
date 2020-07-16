@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 
 int main(void){
     size_t size = 0;
     char* buffer = NULL;
 
-    printf(":\n");
+    printf(":");
     fflush(stdout);
 
     //User input is held in buffer
@@ -29,16 +30,31 @@ int main(void){
         //There is no second word
         //Only 'cd' read, chdir to environment variable as HOME
         if(token2 == NULL){
+            //Set directory to home directory
+            char* homeDir = getenv("HOME");
+
+            //May need to validate this a different way
+            chdir(homeDir);
+
+            char* currentDir = getcwd(NULL, 0);
+
+            printf("current directory: %s\n", currentDir);
             //Need to chdir to what HOME is set to as an env variable
             printf("only cd was passed through\n");
         }
 
         //Token 2 holds destination with cd, use token2 to chdir
         else if (strlen(token2) > 0){
-
+            
             printf("Destination: %s\n", token2);
             printf("Token2 length: %d\n", strlen(token2));
 
+            //change to directory desired
+            chdir(token2);
+            
+            //check if directory properly changed
+            char* currentDir = getcwd(NULL, 0);
+            printf("current directory: %s\n", currentDir);
             //This means there's a 3rd command (this might be unecessary since skipping if & is present anyways)
             if(token2[strlen(token2 - 1) == ' ']){
                 char* token3 = strtok(NULL, "\0");
