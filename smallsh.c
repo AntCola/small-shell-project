@@ -3,10 +3,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+
 
 void handle_SIGINT(int signo){
-    char* message = "\nCaught SIGINT";
+    char* message = "\nCaught SIGINT, this won't do anything.";
     write(STDOUT_FILENO,message,50);
 }
 
@@ -28,7 +31,7 @@ int main(void){
     sigaction(SIGINT, &SIGINT_action, NULL);
 
     //Set kill = 0 when want to exit out of our shell
-    while(kill || numberRuns > 5){
+    while(kill){
 
         //Initialize array to NULL to allow for the reuse
         int h = 0;
@@ -93,9 +96,9 @@ int main(void){
             //Token 2 holds destination with cd, use token2 to chdir
             else if (strlen(token2) > 0){
                 
-                // COMMENT OUT THIS IS FOR MY OWN CHECKING)
-                printf("Destination: %s\n", token2);
-                printf("Token2 length: %d\n", strlen(token2));
+                // // COMMENT OUT THIS IS FOR MY OWN CHECKING)
+                // printf("Destination: %s\n", token2);
+                // printf("Token2 length: %d\n", strlen(token2));
 
                 //change to directory desired, it should change directory in this if statement
                 if(chdir(token2) == -1){
@@ -137,6 +140,20 @@ int main(void){
             //NEED TO FIGURE OUT HOW TO SETUP CTRL-Z FOR BOTH PARENT AND CHILD AND NEED TO FIGURE OUT HOW TO MAKE
             //      CTRL-C BEHAVE DIFFERENTLY WITH CHILD
 
+            //Setup file redirection flags
+            int inputDirection = 0;
+            int outputDirection = 0;
+            int redirectionNeeded = 0;
+            char* FILE;
+            int fileDescriptor;
+
+            if(redirectionNeeded == 1){
+                int p = 1;
+                for(p; p < i; p++){
+                    args[p] = NULL;
+                }
+            }
+
             pid_t spawnPid = -5;
             //Used to determine child exit status
             int childExitMethod = -5;
@@ -153,13 +170,49 @@ int main(void){
                     //Set CTRL-C signal handler to default when called by child (will only kill child process not parent)
                     SIGINT_action.sa_handler = SIG_DFL;
                     sigaction(SIGINT, &SIGINT_action, NULL);
+            
+            // //THIS SECTION IS ALL TYPES OF JACKED UP 
+            // int l = 0;
+            // for(l; l < i; l++){
+            //     if(strcmp(args[l], "<") == 0 || strcmp(args[l], ">") == 0){
+            //         redirectionNeeded = 1;
+            //         FILE = strdup(args[l + 1]);
+            //         if(strcmp(args[l], "<") == 0){
+            //             fileDescriptor = open(FILE, O_RDONLY);
+            //             if(fileDescriptor == -1){
+            //                 printf("Cannot open %s for input!\n", FILE);
+            //                 fflush(stdout);
+            //                 exit(1);
+            //             }
+            //             if(dup2(fileDescriptor, STDIN_FILENO) == -1){
+            //                 printf("Error redirecting file descriptor!\n");
+            //                 fflush(stdout);
+            //                 exit(1);
+            //             }
+            //         else if (strcmp(args[l], ">") == 0){
+            //                 fileDescriptor = open(FILE, O_CREAT| O_RDWR | O_TRUNC, 0644);
+            //                 if(fileDescriptor == -1){
+            //                     printf("Cannot open %s for output!\n", FILE);
+            //                     fflush(stdout);
+            //                     exit(1);
+            //                 }
+            //                 if(dup2(fileDescriptor, STDOUT_FILENO) == - 1){
+            //                     printf("Error redirecting file descriptor!\n");
+            //                     fflush(stdout);
+            //                     exit(1);
+            //                 }
+            //         }
+            //         }
+
+            //         close(fileDescriptor);
+            //         free(FILE);
+            //     }
+            // }
 
                     //Entered comment, so we need to ignore
                     if(strcmp(args[0],"#") == 0){
                         exit(0);
                     }
-
-                    //NEED TO SET UP REDIRECTION HERE
 
                     //Error calling exec so an exit status of 1
                     if (execvp(args[0], args) == -1){
@@ -191,9 +244,8 @@ int main(void){
                     }
                     break;
             }
-            printf("Both processes done running\n");
-            fflush(stdout);
-            // kill = 0;
+            // printf("Both processes done running\n");
+            // fflush(stdout);
         }
 
         //Free contents of argsCopy to allow for the reuse 
@@ -203,25 +255,5 @@ int main(void){
         numberRuns++;
     }
 
-    // //Commands made by me recognized from user input --> now do work with these
-    // if(strcmp(buffer, "cd")==0){
-    //     printf("cd was found\n");
-    // } else if(strcmp(buffer, "exit") == 0){
-    //     printf("exit was found\n");
-    // } else if(strcmp(buffer, "status") == 0){
-    //     printf("status was found\n");
-    // } else{
-    //     printf("nothing found\n");
-    // }
-
-
-
-
-    // int i;
-    // for(i = 0; i < strlen(buffer);i++){
-    //     printf("%i", i);
-    // }
-
-    // printf("%s \n", buffer);
     return 0;   
 }
