@@ -10,6 +10,9 @@
 //global flag to determine background process or not (0 = no bg, 1 = bg process)
 int bg = 0;
 
+//global flag to determine if foreground only or not based on ctrl-z signal
+int foregroundOnly = 0;
+
 //Num background process running
 int bgNum = 0;
 
@@ -43,6 +46,20 @@ void printBg(){
     }
 }
 
+void sigstp_handler(int signo){
+    //Need to change bg to 0 or bg to 1 depending on whats going on here and signfiy foreground only or background only
+    if(foregroundOnly == 0){
+        foregroundOnly = 1;
+        printf("\nEntering foreground-only mode (& is now ignored)\n:");
+        fflush(stdout);
+    }
+    else if(foregroundOnly == 1){
+        foregroundOnly == 0;
+        printf("\nExiting foreground-only mode\n:");
+        fflush(stdout);
+    }
+}
+
 
 int main(void){
     int kill = 1;
@@ -61,6 +78,10 @@ int main(void){
     sigaction(SIGINT, &SIGINT_action, NULL);
 
     //Redirect CTRL-Z to handler function to change bg flag between 1 and 0
+    struct sigaction SIGTSTP_action = {0};
+    SIGTSTP_action.sa_handler = &sigstp_handler;
+    SIGTSTP_action.sa_flags = SA_RESTART;
+    sigaction(SIGTSTP, &SIGTSTP_action, NULL);
 
     //Set kill = 0 when want to exit out of our shell
     while(kill){
@@ -188,9 +209,6 @@ int main(void){
         //Need to use exec built in function and fork (command was neither cd, exit, or status)
         else{
             
-            //NEED TO FIGURE OUT HOW TO SIGNIFY IF BACKGROUND OR FOREGROUND AND RUN BACKGROUND/FOREGROUND 
-            //     MY THOUGHTS HERE ARE WE CHECK FOR THE '&' AND IF THAT'S PRESENT WE ADD A FLAG FOR BG vs FG
-            //     IF IT'S BG WE NEED TO FORK OFF ANOTHER PROCESS TO RUN IN BACKGROUND? STUCK ON THIS
             //NEED TO FIGURE OUT HOW TO SETUP CTRL-Z FOR BOTH PARENT AND CHILD AND NEED TO FIGURE OUT HOW TO MAKE
             //      CTRL-C BEHAVE DIFFERENTLY WITH CHILD
 
@@ -310,7 +328,7 @@ int main(void){
                     // fflush(stdout);
 
                     //Background process
-                    if(bg == 1){
+                    if(bg == 1 && foregroundOnly == 0){
                         waitpid(spawnPid, &childExitMethod, WNOHANG);
                         bgPids[bgNum] = spawnPid;
                         bgNum++;
