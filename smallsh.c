@@ -9,8 +9,9 @@
 
 
 void handle_SIGINT(int signo){
-    char* message = "\nCaught SIGINT, this won't do anything.";
-    write(STDOUT_FILENO,message,50);
+    char* message = "\nCaught SIGINT in foreground, this won't do anything.\n:";
+    write(STDOUT_FILENO,message,55);
+    fflush(stdout);
 }
 
 int main(void){
@@ -60,6 +61,8 @@ int main(void){
             args[i++] = argTokens;
             argTokens = strtok (NULL, " ");
         }
+
+        int totalArgs = i;
 
         //Tokenize command to be ready for built in commands
         char* token1 = strtok(buffer, " ");
@@ -140,19 +143,6 @@ int main(void){
             //NEED TO FIGURE OUT HOW TO SETUP CTRL-Z FOR BOTH PARENT AND CHILD AND NEED TO FIGURE OUT HOW TO MAKE
             //      CTRL-C BEHAVE DIFFERENTLY WITH CHILD
 
-            //Setup file redirection flags
-            int inputDirection = 0;
-            int outputDirection = 0;
-            int redirectionNeeded = 0;
-            char* FILE;
-            int fileDescriptor;
-
-            if(redirectionNeeded == 1){
-                int p = 1;
-                for(p; p < i; p++){
-                    args[p] = NULL;
-                }
-            }
 
             pid_t spawnPid = -5;
             //Used to determine child exit status
@@ -170,48 +160,64 @@ int main(void){
                     //Set CTRL-C signal handler to default when called by child (will only kill child process not parent)
                     SIGINT_action.sa_handler = SIG_DFL;
                     sigaction(SIGINT, &SIGINT_action, NULL);
-            
-            // //THIS SECTION IS ALL TYPES OF JACKED UP 
-            // int l = 0;
-            // for(l; l < i; l++){
-            //     if(strcmp(args[l], "<") == 0 || strcmp(args[l], ">") == 0){
-            //         redirectionNeeded = 1;
-            //         FILE = strdup(args[l + 1]);
-            //         if(strcmp(args[l], "<") == 0){
-            //             fileDescriptor = open(FILE, O_RDONLY);
-            //             if(fileDescriptor == -1){
-            //                 printf("Cannot open %s for input!\n", FILE);
-            //                 fflush(stdout);
-            //                 exit(1);
-            //             }
-            //             if(dup2(fileDescriptor, STDIN_FILENO) == -1){
-            //                 printf("Error redirecting file descriptor!\n");
-            //                 fflush(stdout);
-            //                 exit(1);
-            //             }
-            //         else if (strcmp(args[l], ">") == 0){
-            //                 fileDescriptor = open(FILE, O_CREAT| O_RDWR | O_TRUNC, 0644);
-            //                 if(fileDescriptor == -1){
-            //                     printf("Cannot open %s for output!\n", FILE);
-            //                     fflush(stdout);
-            //                     exit(1);
-            //                 }
-            //                 if(dup2(fileDescriptor, STDOUT_FILENO) == - 1){
-            //                     printf("Error redirecting file descriptor!\n");
-            //                     fflush(stdout);
-            //                     exit(1);
-            //                 }
-            //         }
-            //         }
 
-            //         close(fileDescriptor);
-            //         free(FILE);
-            //     }
-            // }
+                    //Check if redirection is needed
+                    int inputDirection = 0;
+                    int outputDirection = 0;
+                    int redirectionNeeded = 0;
+                    int inc = 0;
+                    char* FILE;
+                    int fileDescriptor;
+
+                    for(inc; inc < totalArgs; inc++){
+                        if(strcmp(args[inc],">") == 0 || strcmp(args[inc],"<") == 0){
+                            redirectionNeeded = 1;
+                            FILE = strdup(args[inc + 1]);
+                            if(strcmp(args[inc], "<") == 0){
+                                fileDescriptor = open(FILE, O_RDONLY);
+                                if(fileDescriptor == -1){
+                                    printf("Can't open %s for input.\n", FILE);
+                                    fflush(stdout);
+                                    exit(1);
+                                }
+                                if(dup2(fileDescriptor, STDIN_FILENO) ==  -1){
+                                    printf("Error redirecting.\n");
+                                    fflush(stdout);
+                                    exit(1);
+                                }
+                            }
+                            else if(strcmp(args[inc], ">") == 0){
+                                fileDescriptor = open(FILE, O_CREAT | O_RDWR | O_TRUNC, 0644);
+                                if(fileDescriptor == -1){
+                                    printf("Cannot open %s for output.\n", FILE);
+                                    fflush(stdout);
+                                    exit(1);
+                                }
+                                if(dup2(fileDescriptor, STDOUT_FILENO) == -1){
+                                    printf("Error redirecting\n");
+                                    fflush(stdout);
+                                    exit(1);
+                                }
+                            }
+                        }
+                    }
+
+                    //Remove all but commmand
+                    if(redirectionNeeded == 1){
+                        int p = 1;
+                        for(p; p < totalArgs; p++){
+                            args[p] = NULL;
+                        }
+                    }
 
                     //Entered comment, so we need to ignore
                     if(strcmp(args[0],"#") == 0){
                         exit(0);
+                    }
+
+                    if(redirectionNeeded == 1){
+                        printf("Redirection needed\n");
+                        fflush(stdout);
                     }
 
                     //Error calling exec so an exit status of 1
@@ -223,8 +229,8 @@ int main(void){
 
                     break;
                 default:
-                    printf("I am the parent!\n");
-                    fflush(stdout);
+                    // printf("I am the parent!\n");
+                    // fflush(stdout);
 
                     //Stalls and waits until child terminates
                     waitpid(spawnPid, &childExitMethod, 0);
