@@ -34,7 +34,7 @@ void printBg(){
             }
             //If terminated via signal report signal that terminated it
             if(WIFSIGNALED(bgExitMethod)){
-                printf("background pid %d is done: terminated by signal %d", bgPids[inc], WTERMSIG(bgExitMethod));
+                printf("background pid %d is done: terminated by signal %d\n", bgPids[inc], WTERMSIG(bgExitMethod));
                 fflush(stdout);
             }
         }
@@ -139,20 +139,8 @@ int main(void){
             }
         }
 
-        //COMMENT FOR MY SELF REMOVE WHEN DONE
-        // if(bg == 1){
-        //     printf("Background checked\n");
-        //     fflush(stdout);
-        // }
-
         //Tokenize command to be ready for built in commands
         char* token1 = strtok(buffer, " ");
-
-        // // COMMENT OUT THIS IS FOR MY OWN CHECKING)
-        // printf("Token1 length: %d\n",strlen(token1));
-        // fflush(stdout);
-        // printf("Command: %s\n", token1);
-        // fflush(stdout);
 
         //Tokenize buffer so I can check command and destination (MIGHT BE ABLE TO USE ARGS FOR THIS, KEEPING THIS FOR NOW)
         if(strncmp(buffer,"cd",2) == 0){
@@ -169,22 +157,10 @@ int main(void){
                 chdir(homeDir);
 
                 char* currentDir = getcwd(NULL, 0);
-
-                // // COMMENT OUT THIS IS FOR MY OWN CHECKING)
-                // printf("current directory: %s\n", currentDir);
-                // fflush(stdout);
-                // //Need to chdir to what HOME is set to as an env variable
-                // printf("only cd was passed through\n");
-                // fflush(stdout);
             }
 
             //Token 2 holds destination with cd, use token2 to chdir
             else if (strlen(token2) > 0){
-                
-                // // COMMENT OUT THIS IS FOR MY OWN CHECKING)
-                // printf("Destination: %s\n", token2);
-                // printf("Token2 length: %d\n", strlen(token2));
-
                 //change to directory desired, it should change directory in this if statement
                 if(chdir(token2) == -1){
                     printf("invalid destination\n");
@@ -316,27 +292,21 @@ int main(void){
                         exit(0);
                     }
 
-                    // //FOR MY OWN CHECKING REMOVE WHEN DONE
-                    // if(redirectionNeeded == 1){
-                    //     printf("Redirection needed\n");
-                    //     fflush(stdout);
-                    // }
-
-
                     //Run execvp and exit with a status of 1 if failure
                     if (execvp(args[0], args) == -1){
-                        printf("Exec Failure!");
+                        int execCheck = 0;
+                        for(execCheck; execCheck < totalArgs;execCheck++){
+                            printf("%s", args[execCheck]);
+                            fflush(stdout);
+                        }
+                        printf(": unknown entry\n");
                         fflush(stdout);
                         exit(1);
                     }
-
                     break;
 
                 //Parent process    
                 default:
-                    // printf("I am the parent!\n");
-                    // fflush(stdout);
-
                     //Background process
                     if(bg == 1 && foregroundOnly == 0){
                         waitpid(spawnPid, &childExitMethod, WNOHANG);
@@ -351,11 +321,7 @@ int main(void){
 
                         //Set our exit status variable to the the method of exit returned from child process
                         exitStatus = WEXITSTATUS(childExitMethod);
-                    
-                        //FOR PERSONAL CHECK WILL REMOVE AT END WHEN DONE TESTING
-                        // printf("Exit status:%d\n", exitStatus);
-                        // fflush(stdout);
-                    
+
                         //If the process was terminated by a signal then we update it this way
                         if(WIFSIGNALED(childExitMethod) != 0){
                             printf("signal %d terminated method\n", WTERMSIG(childExitMethod));
@@ -363,12 +329,8 @@ int main(void){
                             exitStatus = WTERMSIG(childExitMethod);
                          }
                     }
-
                     break;
             }
-            // //FOR MY OWN USE, DELETE WHEN DONE
-            // printf("Both processes done running\n");
-            // fflush(stdout);
         }
 
         //Free contents of argsCopy to allow for the reuse 
@@ -377,6 +339,5 @@ int main(void){
         //Reset bg flag for next run
         bg = 0;
     }
-
     return 0;   
 }
