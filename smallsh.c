@@ -16,7 +16,7 @@ int foregroundOnly = 0;
 //Num background process running
 int bgNum = 0;
 
-//array to hold background pids
+//background pid holder
 int bgPids[256]; 
 
 //Iterate through array holding background PID's so we can print complete processes
