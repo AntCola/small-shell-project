@@ -134,8 +134,6 @@ int main(void){
         for(idCheck; idCheck < totalArgs; idCheck++){
             if(strcmp(args[idCheck], "$$") == 0){
                 args[idCheck] = shellPid;
-                // printf("$$ replaced with %d", args[idCheck]);
-                // fflush(stdout);
             }
         }
 
@@ -182,8 +180,6 @@ int main(void){
         //Exit built in command
         else if (strcmp(token1,"exit") == 0){
             kill = 0;
-            // printf("Exited with an exit status of: %d\n",exitStatus);
-            // fflush(stdout);
         }
 
         //Status built in command
@@ -194,11 +190,6 @@ int main(void){
 
         //Need to use exec built in function and fork (command was neither cd, exit, or status)
         else{
-            
-            //NEED TO FIGURE OUT HOW TO SETUP CTRL-Z FOR BOTH PARENT AND CHILD AND NEED TO FIGURE OUT HOW TO MAKE
-            //      CTRL-C BEHAVE DIFFERENTLY WITH CHILD
-
-
             pid_t spawnPid = -5;
             //Used to determine child exit status
             int childExitMethod = -5;
@@ -212,10 +203,6 @@ int main(void){
 
                 //Child process
                 case 0:    
-                    //FOR MY OWN USE DELETE WHEN DONE
-                    // printf("I am the child!\n");
-                    // fflush(stdout);
-
                     //Set CTRL-C signal handler to default when called by child (will only kill child process not parent)
                     SIGINT_action.sa_handler = SIG_DFL;
                     sigaction(SIGINT, &SIGINT_action, NULL);
@@ -312,8 +299,6 @@ int main(void){
                         waitpid(spawnPid, &childExitMethod, WNOHANG);
                         bgPids[bgNum] = spawnPid;
                         bgNum++;
-                        // printf("Background pid is %d\n", spawnPid);
-                        // fflush(stdout);
                     }                
                     else{
                         //Stalls and waits until child terminates
