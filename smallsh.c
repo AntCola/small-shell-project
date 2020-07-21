@@ -30,10 +30,12 @@ void printBg(){
             //Normal exit (no signal) print PID along with exit status
             if (WIFEXITED(bgExitMethod)){
                 printf("background pid %d is done: exit value %d\n", bgPids[inc], WEXITSTATUS(bgExitMethod));
+                fflush(stdout);
             }
             //If terminated via signal report signal that terminated it
             if(WIFSIGNALED(bgExitMethod)){
                 printf("background pid %d is done: terminated by signal %d", bgPids[inc], WTERMSIG(bgExitMethod));
+                fflush(stdout);
             }
         }
     }
