@@ -19,13 +19,6 @@ int bgNum = 0;
 //array to hold background pids
 int bgPids[256]; 
 
-// //Don't think I need this because I can just set up the signal to be ignored
-// void handle_SIGINT(int signo){
-//     char* message = "\nCaught SIGINT in foreground, this won't do anything.\n:";
-//     write(STDOUT_FILENO,message,55);
-//     fflush(stdout);
-// }
-
 //Iterate through array holding background PID's so we can print complete processes
 //at the start of shell prompt as suggested per assignment guidelines
 void printBg(){
@@ -46,20 +39,21 @@ void printBg(){
     }
 }
 
+//Handles CTRL-Z input so that our foreground only flag can be switched
 void sigstp_handler(int signo){
-    //Need to change bg to 0 or bg to 1 depending on whats going on here and signfiy foreground only or background only
+    //Turn foreground only mode on
     if(foregroundOnly == 0){
         foregroundOnly = 1;
         printf("\nEntering foreground-only mode (& is now ignored)\n:");
         fflush(stdout);
     }
+    //Turn foreground only mode off
     else if(foregroundOnly == 1){
         foregroundOnly == 0;
         printf("\nExiting foreground-only mode\n:");
         fflush(stdout);
     }
 }
-
 
 int main(void){
     int kill = 1;
@@ -83,9 +77,13 @@ int main(void){
     SIGTSTP_action.sa_flags = SA_RESTART;
     sigaction(SIGTSTP, &SIGTSTP_action, NULL);
 
+    char shellPid[50];
+    sprintf(shellPid, "%d", getpid());
+
     //Set kill = 0 when want to exit out of our shell
     while(kill){
-
+        
+        //Print each completed bg process at the start of each prompt
         printBg();
 
         //Initialize array to NULL to allow for the reuse
@@ -129,11 +127,21 @@ int main(void){
             totalArgs--;
         }
 
-        //COMMENT FOR MY SELF REMOVE WHEN DONE
-        if(bg == 1){
-            printf("Background checked\n");
-            fflush(stdout);
+        //Replace && with the process ID if present in the command list
+        int idCheck = 0;
+        for(idCheck; idCheck < totalArgs; idCheck++){
+            if(strcmp(args[idCheck], "$$") == 0){
+                args[idCheck] = shellPid;
+                // printf("$$ replaced with %d", args[idCheck]);
+                // fflush(stdout);
+            }
         }
+
+        //COMMENT FOR MY SELF REMOVE WHEN DONE
+        // if(bg == 1){
+        //     printf("Background checked\n");
+        //     fflush(stdout);
+        // }
 
         //Tokenize command to be ready for built in commands
         char* token1 = strtok(buffer, " ");
@@ -196,8 +204,8 @@ int main(void){
         //Exit built in command
         else if (strcmp(token1,"exit") == 0){
             kill = 0;
-            printf("Exited with an exit status of: %d\n",exitStatus);
-            fflush(stdout);
+            // printf("Exited with an exit status of: %d\n",exitStatus);
+            // fflush(stdout);
         }
 
         //Status built in command
@@ -227,8 +235,8 @@ int main(void){
                 //Child process
                 case 0:    
                     //FOR MY OWN USE DELETE WHEN DONE
-                    printf("I am the child!\n");
-                    fflush(stdout);
+                    // printf("I am the child!\n");
+                    // fflush(stdout);
 
                     //Set CTRL-C signal handler to default when called by child (will only kill child process not parent)
                     SIGINT_action.sa_handler = SIG_DFL;
@@ -302,7 +310,7 @@ int main(void){
                     }
 
                     //Entered comment, so we need to ignore
-                    if(strcmp(args[0],"#") == 0){
+                    if(strncmp(args[0],"#",1) == 0){
                         exit(0);
                     }
 
@@ -343,8 +351,8 @@ int main(void){
                         exitStatus = WEXITSTATUS(childExitMethod);
                     
                         //FOR PERSONAL CHECK WILL REMOVE AT END WHEN DONE TESTING
-                        printf("Exit status:%d\n", exitStatus);
-                        fflush(stdout);
+                        // printf("Exit status:%d\n", exitStatus);
+                        // fflush(stdout);
                     
                         //If the process was terminated by a signal then we update it this way
                         if(WIFSIGNALED(childExitMethod) != 0){
